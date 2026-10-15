@@ -1,0 +1,12 @@
+direct	0	kiosk restarts
+direct	2	lost card PIN
+direct	4	Reservations expire
+direct	8	reading room closes
+indirect	1	A Sunday return shows a late charge. What policy applies?
+indirect	3	Why is a recently added title missing from catalog search?
+indirect	5	The scanner cannot read a worn label. How can staff find the item?
+indirect	9	Why was a third web renewal rejected?
+associative	6	Checkout receipts are using too much paper.
+associative	7	A patron needs to return a book after the branch closes.
+unknown	-	How much does a new library card cost?
+unknown	-	Can patrons borrow a telescope?

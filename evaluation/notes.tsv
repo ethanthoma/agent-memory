@@ -1,0 +1,10 @@
+The library kiosk restarts at 03:00 local time.	kiosk is unavailable overnight near the scheduled restart	fictional-library#kiosk
+Overdue returns incur no fee on Sundays.	a Sunday return shows a late charge	fictional-library#returns
+Only librarians can reset a lost card PIN.	a patron cannot unlock a forgotten card code	fictional-library#cards
+The catalog cache expires after 15 minutes.	a recently added title does not appear in search yet	fictional-library#catalog
+Reservations expire after 48 hours if uncollected.	a held book is released before pickup	fictional-library#reservations
+A damaged barcode can be looked up by item title.	a scanner cannot read a worn item label	fictional-library#barcodes
+The kiosk prints a receipt only when asked.	paper is consumed for every checkout	fictional-library#receipts
+The book drop accepts returns when the branch is closed.	a patron arrives after hours with a borrowed book	fictional-library#book-drop
+The reading room closes at 20:00 local time.	visitors need a place to study late in the evening	fictional-library#reading-room
+Patrons can renew a loan twice online.	a third renewal is rejected in the web account	fictional-library#renewals
