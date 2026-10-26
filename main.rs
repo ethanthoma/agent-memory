@@ -26,11 +26,11 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<String> = env::args().skip(1).take(5).collect();
-    let usage = "usage: agent-memory init | wake | note <text> | recall <text> | search <task> | codex-hook | claude-hook | pin <id> | unpin <id> | correct <id> <text> | forget <id> | summarize <through_id> <text>";
+    let usage = "usage: agent-memory init | info | get <id> | search-json <task> | wake | note <text> | recall <text> | search <task> | codex-hook | claude-hook | pin <id> | unpin <id> | correct <id> <text> | forget <id> | summarize <through_id> <text>";
     let command = arguments.first().ok_or(usage)?.as_str();
     let expected_count = match command {
-        "init" | "wake" | "codex-hook" | "claude-hook" => 1,
-        "note" | "recall" | "search" | "pin" | "unpin" | "forget" => 2,
+        "init" | "info" | "wake" | "codex-hook" | "claude-hook" => 1,
+        "get" | "search-json" | "note" | "recall" | "search" | "pin" | "unpin" | "forget" => 2,
         "correct" | "summarize" => 3,
         _ => return Err(usage.into()),
     };
@@ -96,6 +96,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     };
     match command {
         "init" => {
+            let identity = directory.join("identity");
+            if !identity.exists() {
+                let mut bytes = [0_u8; 16];
+                File::open("/dev/urandom")?.read_exact(&mut bytes)?;
+                let id: String = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
+                write(&identity, &id)?;
+            }
             println!("Memory enabled at {}", directory.display());
             println!(
                 "Add project memory instructions to this repository's AGENTS.md: run agent-memory wake at startup, recall relevant history, and note durable findings. See the standalone tool's README.md for the full block."
@@ -148,6 +155,43 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             notes.push(text.to_owned());
             write_notes(&directory, &notes)?;
             println!("Saved #{id}");
+        }
+        "info" | "get" | "search-json" => {
+            let identity = read(&directory.join("identity"), 32)?;
+            if identity.len() != 32
+                || !identity
+                    .bytes()
+                    .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+            {
+                return Err("store identity is missing or invalid; run agent-memory init".into());
+            }
+            let entry = |id: usize| {
+                format!(
+                    "{{\"id\":{id},\"uri\":\"memory://{identity}/notes/{id}\",\"text\":{},\"pinned\":{}}}",
+                    hook::json_string(&notes[id]),
+                    pins.contains(&id)
+                )
+            };
+            if command == "info" {
+                println!(
+                    "{{\"storeId\":\"{identity}\",\"noteCount\":{},\"trust\":\"untrusted\"}}",
+                    notes.iter().filter(|note| !note.is_empty()).count()
+                );
+            } else if command == "get" {
+                let id = note_id(&arguments[1], &notes)?;
+                println!(
+                    "{{\"storeId\":\"{identity}\",\"trust\":\"untrusted\",\"note\":{}}}",
+                    entry(id)
+                );
+            } else {
+                let query = validate_text(&arguments[1], NOTE_BYTES_MAX)?;
+                let ids = search::within_budget(&notes, &search::rank(&notes, query));
+                let entries: Vec<String> = ids.into_iter().map(entry).collect();
+                println!(
+                    "{{\"storeId\":\"{identity}\",\"trust\":\"untrusted\",\"notes\":[{}]}}",
+                    entries.join(",")
+                );
+            }
         }
         "recall" => {
             let query = validate_text(&arguments[1], NOTE_BYTES_MAX)?.to_lowercase();

@@ -80,6 +80,9 @@ inside the current repository or worktree.
 | `note "text"` | Save a note and print its stable numeric ID. |
 | `recall "text"` | Search original notes; show at most 64 newest matches. |
 | `search "task"` | Rank keyword matches; return at most three candidate notes. |
+| `info` | Return JSON store identity and live note count. |
+| `get <id>` | Read one current note as JSON with its `memory://` URI. |
+| `search-json "task"` | Return ranked candidates as JSON with their resource URIs. |
 | `codex-hook` | For an opted-in Codex prompt hook, inject bounded search candidates or stay silent. |
 | `claude-hook` | For an opted-in Claude Code prompt hook, inject bounded search candidates or stay silent. |
 | `pin <id>` | Keep a note visible at every startup; maximum 16 pins. |
@@ -97,11 +100,17 @@ note slots beyond its coverage.
 ## Storage and limits
 
 `<git-common-dir>/agent-memory/` contains `journal`, `pins`, `summary`, and a
-process lock. The journal is one note per line; line number minus one is the ID.
+process lock. `init` also creates a random store `identity`; rerunning it adds
+an identity to existing stores without replacing notes. Structured reads require
+this identity and never initialize or migrate storage. Worktrees share identity;
+independently initialized repositories have separate identities.
+The journal is one note per line; line number minus one is the ID.
 Blank lines are erased notes, so IDs are never reused. Normal writes preserve
 existing notes; corrections and erasures intentionally replace their content.
 Back up this directory explicitly: pushing Git commits does not back it up.
 Deletion removes current stored text, not copies in backups or prior tool output.
+Resource reads return current content after correction and fail after deletion.
+JSON marks note content as untrusted data; consumers must not execute it.
 
 Operations take an exclusive, nonblocking file lock. A competing operation
 fails explicitly and can be retried. Writes use synced temporary files, atomic

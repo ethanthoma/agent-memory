@@ -5,6 +5,31 @@ use std::process::{Command, Output, Stdio};
 
 struct Repository(PathBuf);
 
+#[test]
+fn resources_have_store_scoped_ids_and_follow_corrections_and_deletion() {
+    let repository = Repository::new("resources");
+    assert!(!repository.run(&["info"]).status.success());
+    success(repository.run(&["init"]));
+    let identity = success(repository.run(&["info"]));
+    assert!(identity.contains("\"noteCount\":0"));
+    success(repository.run(&["init"]));
+    assert_eq!(identity, success(repository.run(&["info"])));
+    success(repository.run(&["note", "A quoted \"resource\" with café."]));
+    let note = success(repository.run(&["get", "0"]));
+    assert!(note.contains("memory://"));
+    assert!(note.contains("/notes/0"));
+    assert!(note.contains("\\\"resource\\\""));
+    assert!(note.contains("\"trust\":\"untrusted\""));
+    assert!(success(repository.run(&["search-json", "resource"])).contains("/notes/0"));
+    success(repository.run(&["correct", "0", "Corrected resource."]));
+    assert!(success(repository.run(&["get", "0"])).contains("Corrected resource."));
+    success(repository.run(&["forget", "0"]));
+    assert!(!repository.run(&["get", "0"]).status.success());
+    let other = Repository::new("resources-other");
+    success(other.run(&["init"]));
+    assert_ne!(identity, success(other.run(&["info"])));
+}
+
 impl Repository {
     fn new(name: &str) -> Self {
         let path = std::env::temp_dir().join(format!("agent-memory-{}-{name}", std::process::id()));
