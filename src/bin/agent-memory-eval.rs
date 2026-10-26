@@ -4,7 +4,7 @@ use std::io::Read;
 use std::path::Path;
 use std::process::ExitCode;
 
-mod search;
+use agent_memory::search;
 
 struct Task {
     category: String,

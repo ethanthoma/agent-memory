@@ -1,33 +1,29 @@
 {
   pkgs ? import <nixpkgs> { },
 }:
-pkgs.stdenv.mkDerivation {
+pkgs.rustPlatform.buildRustPackage {
   pname = "agent-memory";
   version = "0.1.0";
-  src = pkgs.lib.cleanSource ./.;
+  src = pkgs.lib.fileset.toSource {
+    root = ./.;
+    fileset = pkgs.lib.fileset.unions [
+      ./Cargo.toml
+      ./Cargo.lock
+      ./src
+      ./tests
+      ./evaluation
+    ];
+  };
+  cargoLock.lockFile = ./Cargo.lock;
+  RUSTFLAGS = "-D warnings";
   nativeBuildInputs = [
-    pkgs.rustc
     pkgs.makeWrapper
     pkgs.git
   ];
-  buildPhase = ''
-    rustc --edition=2024 -D warnings -O main.rs -o agent-memory
-    rustc --edition=2024 -D warnings -O evaluate.rs -o agent-memory-eval
+  postCheck = ''
+    cargo run --offline --release --target ${pkgs.stdenv.hostPlatform.rust.rustcTarget} --bin agent-memory-eval -- evaluation
   '';
-  doCheck = true;
-  checkPhase = ''
-    MEMORY_BINARY="$PWD/agent-memory" rustc --edition=2024 -D warnings --test tests.rs -o memory-tests
-    ./memory-tests
-    rustc --edition=2024 -D warnings --test search.rs -o search-tests
-    ./search-tests
-    rustc --edition=2024 -D warnings --test hook.rs -o hook-tests
-    ./hook-tests
-    ./agent-memory-eval evaluation
-  '';
-  installPhase = ''
-    mkdir -p $out/bin
-    cp agent-memory $out/bin/
-    cp agent-memory-eval $out/bin/
+  postInstall = ''
     wrapProgram $out/bin/agent-memory --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.git ]}
   '';
 }

@@ -4,8 +4,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
-mod hook;
-mod search;
+use agent_memory::{hook, search};
 
 const STORE_BYTES_MAX: u64 = 16 * 1024 * 1024;
 const NOTE_BYTES_MAX: usize = 512;
@@ -105,7 +104,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             println!("Memory enabled at {}", directory.display());
             println!(
-                "Add project memory instructions to this repository's AGENTS.md: run agent-memory wake at startup, recall relevant history, and note durable findings. See the standalone tool's README.md for the full block."
+                "Add project memory instructions to this repository's AGENTS.md: run agent-memory wake at startup, recall relevant history, and note durable findings. See the standalone tool's docs/agent-instructions.md for the full block."
             );
         }
         "wake" => {

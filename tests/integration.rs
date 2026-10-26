@@ -57,7 +57,7 @@ impl Drop for Repository {
 }
 
 fn run(path: &Path, arguments: &[&str]) -> Output {
-    Command::new(env!("MEMORY_BINARY"))
+    Command::new(env!("CARGO_BIN_EXE_agent-memory"))
         .current_dir(path)
         .args(arguments)
         .output()
@@ -69,7 +69,7 @@ fn hook(path: &Path, event: &str) -> Output {
 }
 
 fn hook_for(path: &Path, project: &Path, event: &str, command: &str) -> Output {
-    let mut child = Command::new(env!("MEMORY_BINARY"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_agent-memory"))
         .current_dir(path)
         .env("CLAUDE_PROJECT_DIR", project)
         .arg(command)
@@ -352,7 +352,7 @@ fn codex_hook_maps_only_the_named_non_git_workspace() {
         workspace.display()
     );
     assert_eq!(success(hook(&workspace, &event)), "");
-    let output = Command::new(env!("MEMORY_BINARY"))
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-memory"))
         .current_dir(&workspace)
         .env("AGENT_MEMORY_WORKSPACE", &workspace)
         .env("AGENT_MEMORY_STORE_REPOSITORY", &repository.0)
